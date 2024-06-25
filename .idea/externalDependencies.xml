@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ExternalDependencies">
+    <plugin id="JavaScriptDebugger" />
+    <plugin id="NodeJS" />
+    <plugin id="com.intellij.database" />
+    <plugin id="com.intellij.ml.llm" />
+  </component>
+</project>
