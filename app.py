@@ -2,7 +2,8 @@ import streamlit as st
 import subprocess
 import json
 import sys
-
+import os
+import requests
 
 # Function to handle user input and predict job match
 def predict_job(formData):
@@ -33,6 +34,25 @@ def predict_job(formData):
     except Exception as e:
         return None, f'Unexpected error: {str(e)}'
 
+# Download function
+def download_largefile():
+    url = 'https://www.dropbox.com/scl/fi/gmxz1hpw1l2ao61hl75jd/job_matching_pipeline.joblib?rlkey=6i99fbm15pyd0lxfpu3m9ep96&st=niqjoo76&dl=0'  # Replace with the actual URL
+    response = requests.get(url, stream=True)
+    if response.status_code == 200:
+        with open('job_matching_pipeline.joblib', 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
+    else:
+        raise Exception(f"Failed to download file: {response.status_code}")
+
+# Ensure the large file is available
+if not os.path.exists('job_matching_pipeline.joblib'):
+    st.write("File not found locally. Downloading...")
+    try:
+        download_largefile()
+        st.write("File downloaded successfully.")
+    except Exception as e:
+        st.write(f"Error during file download: {str(e)}")
 
 # Streamlit UI components
 st.title('Job Match Predictor')
@@ -48,13 +68,11 @@ formData['job_type'] = st.selectbox('Job Type', ['', 'Onsite', 'Remote'])
 formData['job_skills'] = st.text_area('Job Skills')
 
 # Track prediction state
-prediction_made = False
-
+prediction_result = None
 
 # Validate form data
 def is_valid_form(formData):
     return all(formData.values())
-
 
 # Predict button
 if st.button('Predict'):
@@ -65,13 +83,12 @@ if st.button('Predict'):
         if error:
             st.error(f'Prediction error: {error}')
         elif prediction_result:
-            st.success(f'Prediction: {prediction_result}')
-            prediction_made = True  # Set prediction made to true after successful prediction
+            st.success('Prediction successful!')
     else:
         st.error('Please fill in all fields before predicting.')
 
 # Display prediction result with color-coded CSS class if prediction has been made
-if prediction_made:
+if prediction_result:
     def get_prediction_class(prediction):
         if prediction == 'Excellent Match':
             return 'prediction-2'
@@ -82,12 +99,8 @@ if prediction_made:
         else:
             return ''
 
-
     # Display styled prediction message
     st.markdown(
         f'<p class="{get_prediction_class(prediction_result)}">Prediction: {prediction_result}</p>',
         unsafe_allow_html=True
     )
-
-    # Reset prediction state to prevent duplicate display
-    prediction_made = False
