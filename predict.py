@@ -3,51 +3,67 @@ import json
 import joblib
 import pandas as pd
 import os
-import requests
 
-# Download function for Google Drive
-def download_largefile():
-    url = 'https://drive.google.com/uc?export=download&id=10hM4Wfs5E0h3hlrY-ZIxvoDoJf7MSSGM'  # Direct download link
-    response = requests.get(url, stream=True)
-    if response.status_code == 200:
-        with open('job_matching_pipeline.joblib', 'wb') as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                f.write(chunk)
-    else:
-        raise Exception(f"Failed to download file: {response.status_code}")
+# Paths to the preprocessor and model files
+preprocessor_path = 'preprocessor.joblib'
+model_path = 'model.joblib'
 
-# Ensure the large file is available
-if not os.path.exists('job_matching_pipeline.joblib'):
-    try:
-        download_largefile()
-    except Exception as e:
-        print(f"Error during file download: {str(e)}")
-        sys.exit(1)
+# Ensure the preprocessor and model files are available
+if not os.path.exists(preprocessor_path):
+    print(json.dumps({'error': f"Preprocessor file not found: {preprocessor_path}"}))
+    sys.exit(1)
 
-# Load the model
-model = joblib.load('job_matching_pipeline.joblib')
+if not os.path.exists(model_path):
+    print(json.dumps({'error': f"Model file not found: {model_path}"}))
+    sys.exit(1)
+
+# Load the preprocessor and model
+try:
+    preprocessor = joblib.load(preprocessor_path)
+except Exception as e:
+    print(json.dumps({'error': f"Error loading preprocessor: {str(e)}"}))
+    sys.exit(1)
+
+try:
+    model = joblib.load(model_path)
+except Exception as e:
+    print(json.dumps({'error': f"Error loading model: {str(e)}"}))
+    sys.exit(1)
 
 def predict(input_data):
     # Create a DataFrame from the input data
     df = pd.DataFrame([input_data])
 
+    # Preprocess the input data
+    try:
+        df_transformed = preprocessor.transform(df)
+    except Exception as e:
+        return None, f"Error during preprocessing: {str(e)}"
+
     # Make predictions
-    prediction = model.predict(df)[0]
+    try:
+        prediction = model.predict(df_transformed)[0]
+    except Exception as e:
+        return None, f"Error during prediction: {str(e)}"
 
     # Map numerical predictions to categorical labels
     if prediction == 2:
-        return "Excellent Match"
+        return "Excellent Match", None
     elif prediction == 1:
-        return "Good Match"
+        return "Good Match", None
     else:
-        return "Poor Match"
+        return "Poor Match", None
 
 if __name__ == "__main__":
     # Read input data from stdin
     input_data = json.loads(sys.stdin.read())
 
     try:
-        result = {'prediction': predict(input_data)}
+        prediction, error = predict(input_data)
+        if error:
+            result = {'error': error}
+        else:
+            result = {'prediction': prediction}
     except Exception as e:
         result = {'error': str(e)}
 

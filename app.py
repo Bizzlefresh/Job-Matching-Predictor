@@ -2,8 +2,6 @@ import streamlit as st
 import subprocess
 import json
 import sys
-import os
-import requests
 
 # Function to handle user input and predict job match
 def predict_job(formData):
@@ -21,38 +19,16 @@ def predict_job(formData):
         )
 
         # Parse the output from predict.py
-        prediction_result = json.loads(result.stdout)['prediction']
-        return prediction_result, None
+        output = json.loads(result.stdout)
+        if 'error' in output:
+            return None, output['error']
+        return output['prediction'], None
     except subprocess.CalledProcessError as e:
         return None, f'CalledProcessError: {e.stderr}'
     except json.JSONDecodeError as e:
         return None, f'JSONDecodeError: {str(e)}'
-    except FileNotFoundError as e:
-        return None, f'FileNotFoundError: {str(e)}'
-    except ModuleNotFoundError as e:
-        return None, f'ModuleNotFoundError: {str(e)}'
     except Exception as e:
         return None, f'Unexpected error: {str(e)}'
-
-# Download function for Google Drive
-def download_largefile():
-    url = 'https://drive.google.com/uc?export=download&id=10hM4Wfs5E0h3hlrY-ZIxvoDoJf7MSSGM'  # Direct download link
-    response = requests.get(url, stream=True)
-    if response.status_code == 200:
-        with open('job_matching_pipeline.joblib', 'wb') as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                f.write(chunk)
-    else:
-        raise Exception(f"Failed to download file: {response.status_code}")
-
-# Ensure the large file is available
-if not os.path.exists('job_matching_pipeline.joblib'):
-    st.write("File not found locally. Downloading...")
-    try:
-        download_largefile()
-        st.write("File downloaded successfully.")
-    except Exception as e:
-        st.write(f"Error during file download: {str(e)}")
 
 # Streamlit UI components
 st.title('Job Match Predictor')
