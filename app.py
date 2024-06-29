@@ -34,9 +34,9 @@ def predict_job(formData):
     except Exception as e:
         return None, f'Unexpected error: {str(e)}'
 
-# Download function
+# Download function for Google Drive
 def download_largefile():
-    url = 'https://uc77b53d6f970f77e1a195bf2a30.dl.dropboxusercontent.com/cd/0/get/CVuAwHd-diqUmPsPEzyVWh3vyKYbmG8g8paPscPiAgOhTh_9IgqKiXaLWh8cuNJZ08CNCJy5KURtwpxxKR8MfTvjdh5MuZuxO4-MFsPCu-qIbe8B_Tx6P0OKxtweO7EZBFAsEyzwf9ySaCP938YN8lYtoHP3Nt-9QQImn4cC09cm3A/file'  # Replace with the actual URL
+    url = 'https://drive.google.com/uc?export=download&id=10hM4Wfs5E0h3hlrY-ZIxvoDoJf7MSSGM'  # Direct download link
     response = requests.get(url, stream=True)
     if response.status_code == 200:
         with open('job_matching_pipeline.joblib', 'wb') as f:
@@ -83,7 +83,7 @@ if st.button('Predict'):
         if error:
             st.error(f'Prediction error: {error}')
         elif prediction_result:
-            st.success(f'Prediction: {prediction_result}')
+            st.success('Prediction successful!')
     else:
         st.error('Please fill in all fields before predicting.')
 
@@ -94,7 +94,7 @@ if prediction_result:
             return 'prediction-2'
         elif prediction == 'Good Match':
             return 'prediction-1'
-        elif prediction is None or prediction == 'Poor Match':
+        elif prediction == 'Poor Match':
             return 'prediction-0'
         else:
             return ''
