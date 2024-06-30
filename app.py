@@ -24,7 +24,10 @@ def predict_job(formData):
             return None, output['error']
         return output['prediction'], None
     except subprocess.CalledProcessError as e:
-        return None, f'CalledProcessError: {e.stderr}'
+        # Retrieve the log content if there's a CalledProcessError
+        with open("error_log.txt", "r") as log_file:
+            log_content = log_file.read()
+        return None, f'CalledProcessError: {log_content}'
     except json.JSONDecodeError as e:
         return None, f'JSONDecodeError: {str(e)}'
     except Exception as e:

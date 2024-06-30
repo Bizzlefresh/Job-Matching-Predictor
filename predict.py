@@ -8,26 +8,39 @@ import os
 preprocessor_path = 'preprocessor.joblib'
 model_path = 'model.joblib'
 
+# Log to file
+def log_error(message):
+    with open("error_log.txt", "a") as log_file:
+        log_file.write(message + "\n")
+
 # Ensure the preprocessor and model files are available
 if not os.path.exists(preprocessor_path):
-    print(json.dumps({'error': f"Preprocessor file not found: {preprocessor_path}"}))
+    error_message = f"Preprocessor file not found: {preprocessor_path}"
+    log_error(error_message)
+    print(json.dumps({'error': error_message}))
     sys.exit(1)
 
 if not os.path.exists(model_path):
-    print(json.dumps({'error': f"Model file not found: {model_path}"}))
+    error_message = f"Model file not found: {model_path}"
+    log_error(error_message)
+    print(json.dumps({'error': error_message}))
     sys.exit(1)
 
 # Load the preprocessor and model
 try:
     preprocessor = joblib.load(preprocessor_path)
 except Exception as e:
-    print(json.dumps({'error': f"Error loading preprocessor: {str(e)}"}))
+    error_message = f"Error loading preprocessor: {str(e)}"
+    log_error(error_message)
+    print(json.dumps({'error': error_message}))
     sys.exit(1)
 
 try:
     model = joblib.load(model_path)
 except Exception as e:
-    print(json.dumps({'error': f"Error loading model: {str(e)}"}))
+    error_message = f"Error loading model: {str(e)}"
+    log_error(error_message)
+    print(json.dumps({'error': error_message}))
     sys.exit(1)
 
 def predict(input_data):
@@ -55,21 +68,26 @@ def predict(input_data):
         return "Poor Match", None
 
 if __name__ == "__main__":
-    # Read input data from stdin
     try:
+        # Read input data from stdin
         input_data = json.loads(sys.stdin.read())
     except json.JSONDecodeError as e:
-        print(json.dumps({'error': f"JSONDecodeError: {str(e)}"}))
+        error_message = f"JSONDecodeError: {str(e)}"
+        log_error(error_message)
+        print(json.dumps({'error': error_message}))
         sys.exit(1)
 
     try:
         prediction, error = predict(input_data)
         if error:
             result = {'error': error}
+            log_error(error)
         else:
             result = {'prediction': prediction}
     except Exception as e:
-        result = {'error': f"Unexpected error: {str(e)}"}
+        error_message = f"Unexpected error: {str(e)}"
+        log_error(error_message)
+        result = {'error': error_message}
 
     # Output the prediction result as JSON
     print(json.dumps(result))
