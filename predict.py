@@ -56,7 +56,11 @@ def predict(input_data):
 
 if __name__ == "__main__":
     # Read input data from stdin
-    input_data = json.loads(sys.stdin.read())
+    try:
+        input_data = json.loads(sys.stdin.read())
+    except json.JSONDecodeError as e:
+        print(json.dumps({'error': f"JSONDecodeError: {str(e)}"}))
+        sys.exit(1)
 
     try:
         prediction, error = predict(input_data)
@@ -65,7 +69,7 @@ if __name__ == "__main__":
         else:
             result = {'prediction': prediction}
     except Exception as e:
-        result = {'error': str(e)}
+        result = {'error': f"Unexpected error: {str(e)}"}
 
     # Output the prediction result as JSON
     print(json.dumps(result))
