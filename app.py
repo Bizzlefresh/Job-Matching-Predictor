@@ -42,6 +42,7 @@ Simply provide the job details and let our model predict the match quality. The 
 
 - **Excellent Match**
 - **Good Match**
+- **Fair Match**
 - **Poor Match**
 
 Please fill in all the fields below to get started.
@@ -57,18 +58,22 @@ formData['job_location'] = st.text_input('Job Location', help='The location wher
 formData['job_level'] = st.selectbox('Job Level', ['', 'Mid senior', 'Associate'], help='The level or seniority of the job position.')
 formData['job_type'] = st.selectbox('Job Type', ['', 'Onsite', 'Remote'], help='The type of job, whether it is onsite or remote.')
 formData['job_skills'] = st.text_area('Job Skills', help='A list of required or preferred skills for the job.')
+formData['resume'] = st.file_uploader("Upload Resume", type=["pdf", "docx"], help="Upload your resume in PDF or DOCX format.")
 
 # Track prediction state
 prediction_result = None
 
 # Validate form data
 def is_valid_form(formData):
-    return all(formData.values())
+    return all(formData.values()) and formData['resume'] is not None
 
 # Predict button
 if st.button('Predict'):
     if is_valid_form(formData):
         with st.spinner('Predicting...'):
+            resume_content = formData['resume'].read()
+            formData['resume_content'] = resume_content.decode('utf-8', errors='ignore')
+            del formData['resume']
             prediction_result, error = predict_job(formData)
 
         if error:
@@ -82,8 +87,10 @@ if st.button('Predict'):
 if prediction_result:
     def get_prediction_class(prediction):
         if prediction == 'Excellent Match':
-            return 'prediction-2'
+            return 'prediction-3'
         elif prediction == 'Good Match':
+            return 'prediction-2'
+        elif prediction == 'Fair Match':
             return 'prediction-1'
         elif prediction == 'Poor Match':
             return 'prediction-0'
@@ -99,8 +106,12 @@ if prediction_result:
 # CSS for color-coded prediction results
 st.markdown("""
     <style>
-    .prediction-2 {
+    .prediction-3 {
         color: green;
+        font-weight: bold;
+    }
+    .prediction-2 {
+        color: blue;
         font-weight: bold;
     }
     .prediction-1 {

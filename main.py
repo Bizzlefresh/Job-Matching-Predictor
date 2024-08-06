@@ -37,9 +37,11 @@ def create_target(df):
     try:
         conditions = [
             (df['job_level'] == 'Mid senior') & (df['job_type'] == 'Onsite'),
-            (df['job_level'] == 'Associate') & (df['job_type'] == 'Onsite')
+            (df['job_level'] == 'Associate') & (df['job_type'] == 'Onsite'),
+            (df['job_level'] == 'Mid senior') & (df['job_type'] == 'Remote'),
+            (df['job_level'] == 'Associate') & (df['job_type'] == 'Remote')
         ]
-        choices = [2, 1]  # 2 = Excellent Match, 1 = Good Match, 0 = Poor Match
+        choices = [3, 2, 1, 1]  # 3 = Excellent Match, 2 = Good Match, 1 = Fair Match, 0 = Poor Match
         df['target'] = np.select(conditions, choices, default=0)
         return df
     except Exception as e:
@@ -90,8 +92,8 @@ def main():
     y = merged_data['target']
 
     # Fill missing values in text features
-    X.loc[:, 'job_summary'] = X['job_summary'].fillna('')
-    X.loc[:, 'job_skills'] = X['job_skills'].fillna('')
+    X['job_summary'] = X['job_summary'].fillna('')
+    X['job_skills'] = X['job_skills'].fillna('')
 
     # Sample data to reduce size
     X_sampled = X.sample(frac=0.1, random_state=42)

@@ -43,9 +43,60 @@ except Exception as e:
     print(json.dumps({'error': error_message}))
     sys.exit(1)
 
+# Check if docx module is available
+try:
+    from docx import Document
+except ModuleNotFoundError:
+    log_error("python-docx module is not installed.")
+    Document = None
+
+# Check if PyPDF2 module is available
+try:
+    import PyPDF2
+except ModuleNotFoundError:
+    log_error("PyPDF2 module is not installed.")
+    PyPDF2 = None
+
+def extract_text_from_pdf(file_content):
+    if PyPDF2 is None:
+        return ""
+    try:
+        reader = PyPDF2.PdfFileReader(file_content)
+        text = ''
+        for page_num in range(reader.getNumPages()):
+            text += reader.getPage(page_num).extract_text()
+        return text
+    except Exception as e:
+        log_error(f"Error extracting text from PDF: {str(e)}")
+        return ""
+
+def extract_text_from_docx(file_content):
+    if Document is None:
+        return ""
+    try:
+        doc = Document(file_content)
+        text = ''
+        for para in doc.paragraphs:
+            text += para.text
+        return text
+    except Exception as e:
+        log_error(f"Error extracting text from DOCX: {str(e)}")
+        return ""
+
 def predict(input_data):
     # Create a DataFrame from the input data
     df = pd.DataFrame([input_data])
+
+    # Parse resume content
+    resume_text = ""
+    if 'resume_content' in input_data:
+        file_content = input_data['resume_content'].encode('utf-8', errors='ignore')
+        if file_content.startswith(b'%PDF'):
+            resume_text = extract_text_from_pdf(file_content)
+        else:
+            resume_text = extract_text_from_docx(file_content)
+
+    df['resume'] = resume_text
 
     # Preprocess the input data
     try:
@@ -60,10 +111,12 @@ def predict(input_data):
         return None, f"Error during prediction: {str(e)}"
 
     # Map numerical predictions to categorical labels
-    if prediction == 2:
+    if prediction == 3:
         return "Excellent Match", None
-    elif prediction == 1:
+    elif prediction == 2:
         return "Good Match", None
+    elif prediction == 1:
+        return "Fair Match", None
     else:
         return "Poor Match", None
 
