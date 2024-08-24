@@ -6,7 +6,7 @@ import os
 
 # Paths to the preprocessor and model files
 preprocessor_path = 'preprocessor.joblib'
-model_path = 'model.joblib'
+model_path = 'support_vector_machine_model.joblib'
 
 # Log to file
 def log_error(message):
