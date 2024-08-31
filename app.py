@@ -82,6 +82,7 @@ st.title('Job Match Predictor')
 if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
     st.session_state["username"] = ""
+    st.session_state["page"] = "Home"  # Default to Home page
 
 # Sign-Up and Login Flow
 if not st.session_state["logged_in"]:
@@ -120,98 +121,120 @@ if not st.session_state["logged_in"]:
             else:
                 st.error("Invalid username or password.")
 else:
-    st.markdown(f"## Welcome, {st.session_state['username']}!")
-    st.markdown("""
-    This application helps you determine how well a job posting matches your profile. 
-    Simply provide the job details and let our model predict the match quality. The predictions are categorized as:
+    # Navigation bar
+    st.sidebar.title(f"Welcome, {st.session_state['username']}!")
+    nav_selection = st.sidebar.radio("Go to", ["Home", "Job Prediction", "About"])
 
-    - **Excellent Match**
-    - **Good Match**
-    - **Fair Match**
-    - **Poor Match**
+    # Update the current page in session state
+    st.session_state["page"] = nav_selection
 
-    Please fill in all the fields below to get started.
-    """)
+    # Home Page
+    if st.session_state["page"] == "Home":
+        st.header("Home")
+        st.markdown("""
+        Welcome to the Job Match Predictor application! This tool helps you determine how well a job posting matches your profile.
+        Use the navigation bar to explore different sections of the application:
+        - **Home**: The central hub of the application.
+        - **Job Prediction**: Enter job details and get a prediction on how well it matches your profile.
+        - **About**: Learn more about the application.
+        """)
 
-    # Form inputs with tooltips
-    st.markdown("### Job Details")
-    formData = {}
-    formData['job_summary'] = st.text_area('Job Summary', help='A brief summary or description of the job.')
-    formData['job_title'] = st.text_input('Job Title', help='The title or designation of the job.')
-    formData['company'] = st.text_input('Company', help='The name of the company offering the job.')
-    formData['job_location'] = st.text_input('Job Location', help='The location where the job is based.')
-    formData['job_level'] = st.selectbox('Job Level', ['', 'Mid senior', 'Associate'],
-                                         help='The level or seniority of the job position.')
-    formData['job_type'] = st.selectbox('Job Type', ['', 'Onsite', 'Remote'],
-                                        help='The type of job, whether it is onsite or remote.')
-    formData['job_skills'] = st.text_area('Job Skills', help='A list of required or preferred skills for the job.')
-    formData['resume'] = st.file_uploader("Upload Resume", type=["pdf", "docx"],
-                                          help="Upload your resume in PDF or DOCX format.")
+    # Job Prediction Page
+    elif st.session_state["page"] == "Job Prediction":
+        st.header("Job Prediction")
+        st.markdown("""
+        This application helps you determine how well a job posting matches your profile.
+        Simply provide the job details and let our model predict the match quality.
+        """)
 
-    # Track prediction state
-    prediction_result = None
+        # Form inputs with tooltips
+        st.markdown("### Job Details")
+        formData = {}
+        formData['job_summary'] = st.text_area('Job Summary', help='A brief summary or description of the job.')
+        formData['job_title'] = st.text_input('Job Title', help='The title or designation of the job.')
+        formData['company'] = st.text_input('Company', help='The name of the company offering the job.')
+        formData['job_location'] = st.text_input('Job Location', help='The location where the job is based.')
+        formData['job_level'] = st.selectbox('Job Level', ['', 'Mid senior', 'Associate'],
+                                             help='The level or seniority of the job position.')
+        formData['job_type'] = st.selectbox('Job Type', ['', 'Onsite', 'Remote'],
+                                            help='The type of job, whether it is onsite or remote.')
+        formData['job_skills'] = st.text_area('Job Skills', help='A list of required or preferred skills for the job.')
+        formData['resume'] = st.file_uploader("Upload Resume", type=["pdf", "docx"],
+                                              help="Upload your resume in PDF or DOCX format.")
+
+        # Track prediction state
+        prediction_result = None
 
 
-    # Validate form data
-    def is_valid_form(formData):
-        return all(formData.values()) and formData['resume'] is not None
+        # Validate form data
+        def is_valid_form(formData):
+            return all(formData.values()) and formData['resume'] is not None
 
 
-    # Predict button
-    if st.button('Predict'):
-        if is_valid_form(formData):
-            with st.spinner('Predicting...'):
-                resume_content = formData['resume'].read()
-                formData['resume_content'] = resume_content.decode('utf-8', errors='ignore')
-                del formData['resume']
-                prediction_result, error = predict_job(formData)
+        # Predict button
+        if st.button('Predict'):
+            if is_valid_form(formData):
+                with st.spinner('Predicting...'):
+                    resume_content = formData['resume'].read()
+                    formData['resume_content'] = resume_content.decode('utf-8', errors='ignore')
+                    del formData['resume']
+                    prediction_result, error = predict_job(formData)
 
-            if error:
-                st.error(f'Prediction error: {error}')
-            elif prediction_result:
-                st.success('Prediction successful!')
-        else:
-            st.error('Please fill in all fields before predicting.')
-
-    # Display prediction result with color-coded CSS class if prediction has been made
-    if prediction_result:
-        def get_prediction_class(prediction):
-            if prediction == 'Excellent Match':
-                return 'prediction-3'
-            elif prediction == 'Good Match':
-                return 'prediction-2'
-            elif prediction == 'Fair Match':
-                return 'prediction-1'
-            elif prediction == 'Poor Match':
-                return 'prediction-0'
+                if error:
+                    st.error(f'Prediction error: {error}')
+                elif prediction_result:
+                    st.success('Prediction successful!')
             else:
-                return ''
+                st.error('Please fill in all fields before predicting.')
+
+        # Display prediction result with color-coded CSS class if prediction has been made
+        if prediction_result:
+            def get_prediction_class(prediction):
+                if prediction == 'Excellent Match':
+                    return 'prediction-3'
+                elif prediction == 'Good Match':
+                    return 'prediction-2'
+                elif prediction == 'Fair Match':
+                    return 'prediction-1'
+                elif prediction == 'Poor Match':
+                    return 'prediction-0'
+                else:
+                    return ''
 
 
-        # Display styled prediction message
-        st.markdown(
-            f'<p class="{get_prediction_class(prediction_result)}">Prediction: {prediction_result}</p>',
-            unsafe_allow_html=True
-        )
+            # Display styled prediction message
+            st.markdown(
+                f'<p class="{get_prediction_class(prediction_result)}">Prediction: {prediction_result}</p>',
+                unsafe_allow_html=True
+            )
 
-    # CSS for color-coded prediction results
-    st.markdown("""
-        <style>
-        .prediction-3 {
-            color: green;
-            font-weight: bold;
-        }
-        .prediction-2 {
-            color: blue;
-            font-weight: bold;
-        }
-        .prediction-1 {
-            color: orange;
-            font-weight: bold;
-        }
-        .prediction-0 {
-            color: red;
-            font-weight: bold;
-        }
-        </style>
-    """, unsafe_allow_html=True)
+        # CSS for color-coded prediction results
+        st.markdown("""
+            <style>
+            .prediction-3 {
+                color: green;
+                font-weight: bold;
+            }
+            .prediction-2 {
+                color: blue;
+                font-weight: bold;
+            }
+            .prediction-1 {
+                color: orange;
+                font-weight: bold;
+            }
+            .prediction-0 {
+                color: red;
+                font-weight: bold;
+            }
+            </style>
+        """, unsafe_allow_html=True)
+
+    # About Page
+    elif st.session_state["page"] == "About":
+        st.header("About")
+        st.markdown("""
+        The Job Match Predictor application is designed to help users assess how well a job posting matches their profile.
+        The application uses a machine learning model to analyze job descriptions and user resumes to provide a match prediction.
+        """)
+
