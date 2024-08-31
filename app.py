@@ -103,7 +103,8 @@ if not st.session_state["logged_in"]:
                     st.session_state["logged_in"] = True
                     st.session_state["username"] = new_username
                     st.success(message)
-                    st.experimental_rerun()  # Redirect to the main page
+                    # Redirect to Home page by setting the page variable
+                    st.session_state["page"] = "Home"
                 else:
                     st.error(message)
 
@@ -116,8 +117,9 @@ if not st.session_state["logged_in"]:
             if authenticate(username, password):
                 st.session_state["logged_in"] = True
                 st.session_state["username"] = username
-                st.success("Login successful! Redirecting...")
-                st.experimental_rerun()  # Redirect to the main page
+                st.success("Login successful!")
+                # Redirect to Home page by setting the page variable
+                st.session_state["page"] = "Home"
             else:
                 st.error("Invalid username or password.")
 else:
